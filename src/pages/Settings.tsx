@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Sun, Moon, Save, ChevronLeft, Clock, Calendar, 
-  Globe, Bell, Shield, Database, Palette 
+  Globe, Bell, Shield, Database, Palette, Trash2 
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Switch } from '../components/ui/Switch';
+import { Card } from '../components/ui/Card';
 import { useAuth } from '../hooks/useAuth';
 
 export function Settings() {
@@ -21,41 +22,50 @@ export function Settings() {
     analytics: true
   });
   const [saving, setSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Load settings from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('appSettings');
-    if (saved) {
-      setSettings(JSON.parse(saved));
+    try {
+      const saved = localStorage.getItem('appSettings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setSettings(parsed);
+      }
+    } catch (error) {
+      console.error('Failed to load settings:', error);
     }
   }, []);
 
-  // Apply theme
+  // Apply theme immediately
   useEffect(() => {
     const theme = settings.theme === 'system' 
       ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
       : settings.theme;
     
-    document.documentElement.classList.toggle('dark', theme === 'dark');
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
     localStorage.setItem('theme', theme);
   }, [settings.theme]);
 
   const handleSettingChange = (key: string, value: any) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    setSettings(prev => ({ 
+      ...prev, 
+      [key]: value 
+    }));
+    setHasChanges(true);
   };
 
-  const saveSettings = async () => {
+  const saveSettings = () => {
     setSaving(true);
     try {
-      // Save to localStorage
       localStorage.setItem('appSettings', JSON.stringify(settings));
-      
-      // Apply immediate changes
-      if (settings.theme !== 'system') {
-        document.documentElement.classList.toggle('dark', settings.theme === 'dark');
-      }
-      
-      alert('Settings saved successfully!');
+      setHasChanges(false);
+      // Trigger custom event for other components
+      window.dispatchEvent(new CustomEvent('settingsUpdated', { detail: settings }));
     } catch (error) {
       alert('Failed to save settings');
     } finally {
@@ -77,178 +87,184 @@ export function Settings() {
     };
     setSettings(defaults);
     localStorage.removeItem('appSettings');
-    document.documentElement.removeAttribute('class');
-    alert('Settings reset to defaults');
+    document.documentElement.classList.remove('dark');
+    setHasChanges(false);
   };
 
   return (
-    <div className="space-y-8 max-w-2xl mx-auto">
+    <div className="space-y-8 max-w-4xl mx-auto p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent dark:from-white dark:to-gray-300">
             Settings
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             Customize your TeamFlow experience
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
           <Button 
             variant="outline" 
             onClick={resetSettings}
-            className="border-gray-200 dark:border-gray-700"
+            className="border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
+            disabled={saving}
           >
+            <Trash2 className="w-4 h-4 mr-2" />
             Reset All
           </Button>
           <Button 
             onClick={saveSettings} 
-            disabled={saving}
-            className="bg-blue-600 hover:bg-blue-700"
+            disabled={!hasChanges || saving}
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                {hasChanges ? 'Save Changes' : 'Saved'}
+              </>
+            )}
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Appearance */}
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8 shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <Palette className="w-6 h-6 text-blue-600" />
+        {/* Appearance & Display */}
+        <Card className="lg:col-span-1">
+          <div className="p-8">
+            <div className="flex items-center gap-3 mb-8">
+              <Palette className="w-8 h-8 text-blue-600" />
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Appearance</h2>
             </div>
 
+            {/* Theme Selector */}
             <div className="space-y-6">
-              {/* Theme Toggle */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Theme</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Dark, Light, or System default
-                  </p>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  Theme Mode
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { value: 'light', label: 'Light', icon: Sun },
+                    { value: 'dark', label: 'Dark', icon: Moon },
+                    { value: 'system', label: 'System', icon: null }
+                  ].map(({ value, label, icon: Icon }) => (
+                    <button
+                      key={value}
+                      onClick={() => handleSettingChange('theme', value)}
+                      className={`p-4 rounded-xl border-2 transition-all group ${
+                        settings.theme === value
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-lg'
+                          : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {Icon && <Icon className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600" />}
+                        <span className="font-medium text-gray-900 dark:text-white">{label}</span>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-                <div className="flex gap-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-xl">
-                  <button
-                    onClick={() => handleSettingChange('theme', 'light')}
-                    className={`p-2 rounded-lg transition-all ${
-                      settings.theme === 'light' 
-                        ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600' 
-                        : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    <Sun className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleSettingChange('theme', 'dark')}
-                    className={`p-2 rounded-lg transition-all ${
-                      settings.theme === 'dark' 
-                        ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600' 
-                        : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    <Moon className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleSettingChange('theme', 'system')}
-                    className={`p-2 rounded-lg transition-all ${
-                      settings.theme === 'system' 
-                        ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600' 
-                        : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    <span className="text-xs font-medium">SYS</span>
-                  </button>
-                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  System follows your OS preference
+                </p>
               </div>
 
-              {/* Language */}
               <div>
-                <label className="block font-semibold text-gray-900 dark:text-white mb-2">
-                  Language
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  Language / Region
                 </label>
                 <select
                   value={settings.language}
                   onChange={(e) => handleSettingChange('language', e.target.value)}
-                  className="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-4 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 >
-                  <option value="en">English</option>
+                  <option value="en">English (Default)</option>
                   <option value="af">Afrikaans</option>
-                  <option value="zu">Zulu</option>
+                  <option value="zu">isiZulu</option>
                 </select>
               </div>
             </div>
           </div>
+        </Card>
 
-          {/* Time & Date */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8 shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <Clock className="w-6 h-6 text-green-600" />
+        {/* Time & Date Settings */}
+        <Card className="lg:col-span-1">
+          <div className="p-8">
+            <div className="flex items-center gap-3 mb-8">
+              <Clock className="w-8 h-8 text-green-600" />
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Date & Time</h2>
             </div>
 
             <div className="space-y-6">
               <div>
-                <label className="block font-semibold text-gray-900 dark:text-white mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                   Time Format
                 </label>
                 <select
                   value={settings.timeFormat}
                   onChange={(e) => handleSettingChange('timeFormat', e.target.value)}
-                  className="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-4 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
-                  <option value="24h">24-hour (14:30)</option>
-                  <option value="12h">12-hour (2:30 PM)</option>
+                  <option value="24h">24-hour • 14:30</option>
+                  <option value="12h">12-hour • 2:30 PM</option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-semibold text-gray-900 dark:text-white mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                   Date Format
                 </label>
                 <select
                   value={settings.dateFormat}
                   onChange={(e) => handleSettingChange('dateFormat', e.target.value)}
-                  className="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-4 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
-                  <option value="dd/mm/yyyy">DD/MM/YYYY (22/01/2026)</option>
-                  <option value="mm/dd/yyyy">MM/DD/YYYY (01/22/2026)</option>
-                  <option value="yyyy-mm-dd">YYYY-MM-DD (2026-01-22)</option>
+                  <option value="dd/mm/yyyy">DD/MM/YYYY • 22/01/2026</option>
+                  <option value="mm/dd/yyyy">MM/DD/YYYY • 01/22/2026</option>
+                  <option value="yyyy-mm-dd">YYYY-MM-DD • 2026-01-22</option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-semibold text-gray-900 dark:text-white mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                   Timezone
                 </label>
                 <select
                   value={settings.timezone}
                   onChange={(e) => handleSettingChange('timezone', e.target.value)}
-                  className="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-4 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
-                  <option value="Africa/Johannesburg">SAST (GMT+2)</option>
-                  <option value="Europe/London">GMT/BST</option>
-                  <option value="America/New_York">EST/EDT</option>
+                  <option value="Africa/Johannesburg">SAST (GMT+2) • Johannesburg</option>
+                  <option value="Europe/London">GMT/BST • London</option>
+                  <option value="America/New_York">EST/EDT • New York</option>
+                  <option value="UTC">UTC • Coordinated Universal</option>
                 </select>
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
-        {/* Notifications & Privacy */}
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8 shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <Bell className="w-6 h-6 text-yellow-600" />
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications</h2>
+        {/* Notifications */}
+        <Card className="lg:col-span-2">
+          <div className="p-8">
+            <div className="flex items-center gap-3 mb-8">
+              <Bell className="w-8 h-8 text-yellow-600" />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications & Behavior</h2>
             </div>
 
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-xl">
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Desktop Notifications</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Clock-in reminders and daily summaries</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Browser Notifications</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Daily summaries and clock-in reminders
+                  </p>
                 </div>
                 <Switch
                   checked={settings.notifications}
@@ -256,30 +272,54 @@ export function Settings() {
                 />
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-xl">
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Auto Clock-Out</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Automatically clock out after idle time</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Auto Clock-Out</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Automatically end sessions after idle time
+                  </p>
                 </div>
                 <Switch
                   checked={settings.autoClockOut}
                   onCheckedChange={(checked) => handleSettingChange('autoClockOut', checked)}
                 />
               </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  Idle Timeout
+                </label>
+                <select
+                  value={settings.idleTimeout}
+                  onChange={(e) => handleSettingChange('idleTimeout', parseInt(e.target.value))}
+                  className="w-full p-4 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                >
+                  <option value={0}>Disabled</option>
+                  <option value={15}>15 minutes</option>
+                  <option value={30}>30 minutes</option>
+                  <option value={60}>1 hour</option>
+                  <option value={120}>2 hours</option>
+                </select>
+              </div>
             </div>
           </div>
+        </Card>
 
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8 shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <Shield className="w-6 h-6 text-purple-600" />
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Privacy</h2>
+        {/* Privacy & Data */}
+        <Card className="lg:col-span-2">
+          <div className="p-8">
+            <div className="flex items-center gap-3 mb-8">
+              <Shield className="w-8 h-8 text-purple-600" />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Privacy & Data</h2>
             </div>
 
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-xl">
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Analytics</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Help improve TeamFlow (local only)</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Analytics</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Local usage data to improve TeamFlow
+                  </p>
                 </div>
                 <Switch
                   checked={settings.analytics}
@@ -287,38 +327,46 @@ export function Settings() {
                 />
               </div>
 
-              <div>
-                <label className="block font-semibold text-gray-900 dark:text-white mb-2">
-                  Idle Timeout (minutes)
-                </label>
-                <select
-                  value={settings.idleTimeout}
-                  onChange={(e) => handleSettingChange('idleTimeout', parseInt(e.target.value))}
-                  className="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500"
+              <div className="p-4 border border-gray-200 dark:border-gray-600 rounded-xl">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Clear All Data</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Delete timesheets, teams, and settings (irreversible)
+                </p>
+                <Button
+                  variant="destructive"
+                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-2"
+                  onClick={() => {
+                    if (confirm('Delete ALL data? This cannot be undone.')) {
+                      localStorage.clear();
+                      window.location.reload();
+                    }
+                  }}
                 >
-                  <option value={15}>15 minutes</option>
-                  <option value={30}>30 minutes</option>
-                  <option value={60}>1 hour</option>
-                  <option value={0}>Never</option>
-                </select>
+                  Clear Everything
+                </Button>
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
-      {/* Status */}
-      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-6">
-        <div className="flex items-center gap-3">
-          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-          <h3 className="font-semibold text-green-900 dark:text-green-100">
-            All changes saved locally and applied instantly
-          </h3>
+      {/* Status Bar */}
+      <Card>
+        <div className="p-6 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200 dark:border-emerald-800 rounded-2xl">
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse" />
+            <div>
+              <h3 className="font-semibold text-emerald-900 dark:text-emerald-100">
+                {hasChanges ? 'Unsaved changes detected' : 'All settings up to date'}
+              </h3>
+              <p className="text-sm text-emerald-700 dark:text-emerald-200">
+                Settings are saved locally and sync across browser sessions
+              </p>
+            </div>
+          </div>
         </div>
-        <p className="text-sm text-green-700 dark:text-green-200 mt-1">
-          Settings persist across sessions and devices (localStorage)
-        </p>
-      </div>
+      </Card>
     </div>
   );
 }
+
