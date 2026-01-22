@@ -1,17 +1,44 @@
-// components/ui/Switch.tsx
 import React from 'react';
+import { cva, type VariantProps } from 'class-variance-authority'; // Optional, or use plain Tailwind
 
-export function Switch({ checked, onCheckedChange, ...props }) {
+const switchVariants = cva(
+  "inline-flex items-center h-6 w-11 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-input",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+);
+
+interface SwitchProps extends React.HTMLAttributes<HTMLButtonElement>, VariantProps<typeof switchVariants> {
+  checked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
+  disabled?: boolean;
+}
+
+export function Switch({ 
+  className, 
+  checked, 
+  onCheckedChange, 
+  disabled,
+  ...props 
+}: SwitchProps) {
   return (
     <button
-      className={`w-12 h-6 rounded-full transition-all duration-200 relative ${
-        checked ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-      }`}
-      onClick={() => onCheckedChange(!checked)}
+      className={switchVariants({ variant: "default", className })}
+      data-state={checked ? "checked" : "unchecked"}
+      onClick={() => !disabled && onCheckedChange?.(!checked)}
+      disabled={disabled}
       {...props}
     >
-      <div
-        className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-200 shadow-sm ${
+      <span className="sr-only">Toggle</span>
+      <span
+        className={`block h-5 w-5 rounded-full transition-transform bg-background shadow-lg ring-0 ${
           checked ? 'translate-x-6' : 'translate-x-1'
         }`}
       />
