@@ -1,0 +1,6 @@
+-- Global Admin Database
+CREATE TABLE companies (id TEXT PRIMARY KEY, name TEXT, domain TEXT, is_global INTEGER);
+INSERT INTO companies VALUES ('global', 'Global Admin', 'mattcoombes247@gmail.com', 1);
+
+CREATE TABLE users (id TEXT PRIMARY KEY, name TEXT, email TEXT, role TEXT, company_id TEXT);
+INSERT INTO users VALUES ('global-admin', 'Matt Coombes', 'mattcoombes247@gmail.com', 'superadmin', 'global');
