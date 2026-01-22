@@ -1,19 +1,9 @@
+// src/contexts/DatabaseContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import initSqlJs from 'sql.js';
 import { useCompany } from './CompanyContext';
 
-interface DatabaseContextType {
-  timeRecords: any[];
-  users: any[];
-  teams: any[];
-  companies: any[];
-  addTimeRecord: (record: any) => void;
-  updateTimeRecord: (id: string, updates: any) => void;
-  deleteTimeRecord: (id: string) => void;
-  loading: boolean;
-}
-
-const DatabaseContext = createContext<DatabaseContextType | null>(null);
+const DatabaseContext = createContext<any>(null);
 
 export function DatabaseProvider({ children }: { children: ReactNode }) {
   const [db, setDb] = useState<any>(null);
@@ -27,7 +17,9 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!currentCompany?.id) return;
 
-    initSqlJs({ locateFile: (file: string) => `https://sql.js.org/dist/${file}` }).then((SQL) => {
+    initSqlJs({ 
+      locateFile: (file: string) => `https://sql.js.org/dist/${file}`
+    }).then((SQL) => {
       fetch(`/db/${currentCompany.id}.db`)
         .then((res) => res.arrayBuffer())
         .then((buffer) => {
@@ -36,7 +28,10 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
           loadData(database);
           setLoading(false);
         })
-        .catch((err) => console.error('Database load failed:', err));
+        .catch((err) => {
+          console.error('Database load failed:', err);
+          setLoading(false);
+        });
     });
   }, [currentCompany?.id]);
 
@@ -45,12 +40,10 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
       const timeRecordsResult = database.exec("SELECT * FROM time_records WHERE company_id = ? ORDER BY clock_in DESC", [currentCompany!.id]);
       const usersResult = database.exec("SELECT * FROM users WHERE company_id = ? ORDER BY name", [currentCompany!.id]);
       const teamsResult = database.exec("SELECT * FROM teams WHERE company_id = ?", [currentCompany!.id]);
-      const companiesResult = database.exec("SELECT * FROM companies");
-
+      
       setTimeRecords(timeRecordsResult[0]?.values || []);
       setUsers(usersResult[0]?.values || []);
       setTeams(teamsResult[0]?.values || []);
-      setCompanies(companiesResult[0]?.values || []);
     } catch (err) {
       console.error('Load data error:', err);
     }
@@ -80,29 +73,10 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateTimeRecord = (id: string, updates: any) => {
-    if (!db) return;
-    // Implement UPDATE logic here
-    loadData(db);
-  };
-
-  const deleteTimeRecord = (id: string) => {
-    if (!db) return;
-    try {
-      const stmt = db.prepare("DELETE FROM time_records WHERE id = ?");
-      stmt.bind([id]);
-      stmt.step();
-      stmt.free();
-      loadData(db);
-    } catch (err) {
-      console.error('Delete error:', err);
-    }
-  };
-
   return (
     <DatabaseContext.Provider value={{
       timeRecords, users, teams, companies,
-      addTimeRecord, updateTimeRecord, deleteTimeRecord,
+      addTimeRecord,
       loading
     }}>
       {children}
