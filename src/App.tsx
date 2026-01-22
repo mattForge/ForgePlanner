@@ -9,11 +9,13 @@ import { DataProvider } from './contexts/DataContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Layout } from './components/layout/Layout';
+
 // Pages
 import { Dashboard } from './pages/Dashboard';
 import { Planner } from './pages/Planner';
 import { TimeTracking } from './pages/TimeTracking';
-import { Timesheets } from './pages/Timesheets'; // NEW
+import { Timesheets } from './pages/Timesheets';
+import { Settings } from './pages/Settings'; // ✅ NEW - Added
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { ChangePassword } from './pages/ChangePassword';
@@ -38,7 +40,7 @@ export function App() {
               </ProtectedRoute>
             }/>
 
-            {/* Employee/HR Common Routes */}
+            {/* Employee/HR/Admin Common Routes */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Layout><Dashboard /></Layout>
@@ -61,6 +63,13 @@ export function App() {
             <Route path="/timesheets" element={
               <ProtectedRoute requiredRole="hr">
                 <Layout><Timesheets /></Layout>
+              </ProtectedRoute>
+            }/>
+
+            {/* ✅ SETTINGS - Available to ALL authenticated users */}
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Layout><Settings /></Layout>
               </ProtectedRoute>
             }/>
 
