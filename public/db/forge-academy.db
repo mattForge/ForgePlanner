@@ -1,0 +1,7 @@
+-- Forge Academy Database
+CREATE TABLE companies (id TEXT PRIMARY KEY, name TEXT, domain TEXT, is_global INTEGER);
+INSERT INTO companies VALUES ('forge-academy', 'The Forge Academy', 'forge-academy.com', 0);
+
+CREATE TABLE users (id TEXT PRIMARY KEY, name TEXT, email TEXT, role TEXT, company_id TEXT);
+INSERT INTO users VALUES ('forge-hr', 'Forge HR', 'hr@forge-academy.com', 'hr', 'forge-academy');
+INSERT INTO users VALUES ('forge-member1', 'Forge Employee 1', 'employee1@forge-academy.com', 'member', 'forge-academy');
