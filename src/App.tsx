@@ -5,8 +5,9 @@ import {
   Route,
   Navigate 
 } from 'react-router-dom';
-import { DataProvider } from './contexts/DataContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { CompanyProvider } from './contexts/CompanyContext';
+import { DatabaseProvider } from './contexts/DatabaseContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Layout } from './components/layout/Layout';
 
@@ -15,7 +16,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Planner } from './pages/Planner';
 import { TimeTracking } from './pages/TimeTracking';
 import { Timesheets } from './pages/Timesheets';
-import { Settings } from './pages/Settings'; // ✅ NEW - Added
+import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { ChangePassword } from './pages/ChangePassword';
@@ -25,77 +26,79 @@ import { TeamManagement } from './pages/TeamManagement';
 
 export function App() {
   return (
-    <DataProvider>
-      <AuthProvider>
-        <Router>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Login />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+    <AuthProvider>
+      <CompanyProvider>
+        <DatabaseProvider>
+          <Router>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Login />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-            <Route path="/change-password" element={
-              <ProtectedRoute>
-                <ChangePassword />
-              </ProtectedRoute>
-            }/>
+              <Route path="/change-password" element={
+                <ProtectedRoute>
+                  <ChangePassword />
+                </ProtectedRoute>
+              }/>
 
-            {/* Employee/HR/Admin Common Routes */}
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Layout><Dashboard /></Layout>
-              </ProtectedRoute>
-            }/>
+              {/* Employee/HR/Admin Common Routes */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Layout><Dashboard /></Layout>
+                </ProtectedRoute>
+              }/>
 
-            <Route path="/planner" element={
-              <ProtectedRoute>
-                <Layout><Planner /></Layout>
-              </ProtectedRoute>
-            }/>
+              <Route path="/planner" element={
+                <ProtectedRoute>
+                  <Layout><Planner /></Layout>
+                </ProtectedRoute>
+              }/>
 
-            <Route path="/time-tracking" element={
-              <ProtectedRoute>
-                <Layout><TimeTracking /></Layout>
-              </ProtectedRoute>
-            }/>
+              <Route path="/time-tracking" element={
+                <ProtectedRoute>
+                  <Layout><TimeTracking /></Layout>
+                </ProtectedRoute>
+              }/>
 
-            {/* HR Routes */}
-            <Route path="/timesheets" element={
-              <ProtectedRoute requiredRole="hr">
-                <Layout><Timesheets /></Layout>
-              </ProtectedRoute>
-            }/>
+              {/* HR Routes */}
+              <Route path="/timesheets" element={
+                <ProtectedRoute requiredRole="hr">
+                  <Layout><Timesheets /></Layout>
+                </ProtectedRoute>
+              }/>
 
-            {/* ✅ SETTINGS - Available to ALL authenticated users */}
-            <Route path="/settings" element={
-              <ProtectedRoute>
-                <Layout><Settings /></Layout>
-              </ProtectedRoute>
-            }/>
+              {/* ✅ SETTINGS - Available to ALL authenticated users */}
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <Layout><Settings /></Layout>
+                </ProtectedRoute>
+              }/>
 
-            {/* Admin Routes */}
-            <Route path="/admin/dashboard" element={
-              <ProtectedRoute requiredRole="admin">
-                <Layout><AdminDashboard /></Layout>
-              </ProtectedRoute>
-            }/>
+              {/* Admin Routes */}
+              <Route path="/admin/dashboard" element={
+                <ProtectedRoute requiredRole="admin">
+                  <Layout><AdminDashboard /></Layout>
+                </ProtectedRoute>
+              }/>
 
-            <Route path="/admin/users" element={
-              <ProtectedRoute requiredRole="admin">
-                <Layout><UserManagement /></Layout>
-              </ProtectedRoute>
-            }/>
+              <Route path="/admin/users" element={
+                <ProtectedRoute requiredRole="admin">
+                  <Layout><UserManagement /></Layout>
+                </ProtectedRoute>
+              }/>
 
-            <Route path="/admin/teams" element={
-              <ProtectedRoute requiredRole="admin">
-                <Layout><TeamManagement /></Layout>
-              </ProtectedRoute>
-            }/>
+              <Route path="/admin/teams" element={
+                <ProtectedRoute requiredRole="admin">
+                  <Layout><TeamManagement /></Layout>
+                </ProtectedRoute>
+              }/>
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Router>
-      </AuthProvider>
-    </DataProvider>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Router>
+        </DatabaseProvider>
+      </CompanyProvider>
+    </AuthProvider>
   );
 }
