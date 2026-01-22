@@ -1,7 +1,13 @@
+// src/contexts/CompanyContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useAuth } from '../hooks/useAuth'; // Your existing auth hook
+import { useAuth } from '../AuthContext';
 
-interface Company { id: string; name: string; domain: string; }
+interface Company { 
+  id: string; 
+  name: string; 
+  domain: string; 
+}
+
 interface CompanyContextType {
   currentCompany: Company | null;
   availableCompanies: Company[];
@@ -17,14 +23,15 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     { id: 'global', name: 'Global Admin', domain: 'mattcoombes247@gmail.com' },
     { id: 'forge-academy', name: 'The Forge Academy', domain: 'forge-academy.com' }
   ]);
-  
+
   const { currentUser } = useAuth();
   const hasGlobalAccess = currentUser?.email === 'mattcoombes247@gmail.com';
 
   useEffect(() => {
     if (currentUser && availableCompanies.length) {
       const userCompany = availableCompanies.find(c => 
-        currentUser.email === c.domain || currentUser.company_id === c.id
+        currentUser.email === c.domain || 
+        currentUser.company_id === c.id
       ) || availableCompanies[0];
       setCurrentCompanyState(userCompany);
     }
@@ -38,7 +45,12 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <CompanyContext.Provider value={{ currentCompany, availableCompanies, setCurrentCompany, hasGlobalAccess }}>
+    <CompanyContext.Provider value={{ 
+      currentCompany, 
+      availableCompanies, 
+      setCurrentCompany, 
+      hasGlobalAccess 
+    }}>
       {children}
     </CompanyContext.Provider>
   );
