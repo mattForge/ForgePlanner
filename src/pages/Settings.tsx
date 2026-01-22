@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Sun, Moon, Save, ChevronLeft, Clock, Calendar, 
-  Globe, Bell, Shield, Database, Palette, Trash2 
+  Sun, Moon, Save, Clock, Calendar, 
+  Globe, Bell, Shield, Palette 
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Switch } from '../components/ui/Switch';
@@ -64,7 +64,6 @@ export function Settings() {
     try {
       localStorage.setItem('appSettings', JSON.stringify(settings));
       setHasChanges(false);
-      // Trigger custom event for other components
       window.dispatchEvent(new CustomEvent('settingsUpdated', { detail: settings }));
     } catch (error) {
       alert('Failed to save settings');
@@ -110,7 +109,6 @@ export function Settings() {
             className="border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
             disabled={saving}
           >
-            <Trash2 className="w-4 h-4 mr-2" />
             Reset All
           </Button>
           <Button 
@@ -305,7 +303,7 @@ export function Settings() {
           </div>
         </Card>
 
-        {/* Privacy & Data */}
+        {/* Privacy & Data - NO DELETE BUTTON */}
         <Card className="lg:col-span-2">
           <div className="p-8">
             <div className="flex items-center gap-3 mb-8">
@@ -325,25 +323,6 @@ export function Settings() {
                   checked={settings.analytics}
                   onCheckedChange={(checked) => handleSettingChange('analytics', checked)}
                 />
-              </div>
-
-              <div className="p-4 border border-gray-200 dark:border-gray-600 rounded-xl">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Clear All Data</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Delete timesheets, teams, and settings (irreversible)
-                </p>
-                <Button
-                  variant="destructive"
-                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-2"
-                  onClick={() => {
-                    if (confirm('Delete ALL data? This cannot be undone.')) {
-                      localStorage.clear();
-                      window.location.reload();
-                    }
-                  }}
-                >
-                  Clear Everything
-                </Button>
               </div>
             </div>
           </div>
@@ -369,4 +348,3 @@ export function Settings() {
     </div>
   );
 }
-
