@@ -1,66 +1,44 @@
-import React, { useState } from 'react';
-import { useData } from '../contexts/DataContext';
-import { UserTable } from '../components/admin/UserTable';
-import { CreateUserModal } from '../components/admin/CreateUserModal';
-import { TeamSelector } from '../components/admin/TeamSelector';
-import { Button } from '../components/ui/Button';
-import { Plus, Search } from 'lucide-react';
+import React from 'react';
+import { useDatabase } from '../contexts/DatabaseContext';
+
 export function UserManagement() {
-  const { users, teams } = useData();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedTeamId, setSelectedTeamId] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const filteredUsers = users.filter((user) => {
-    const matchesTeam =
-    selectedTeamId === 'all' || user.teamIds.includes(selectedTeamId);
-    const matchesSearch =
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTeam && matchesSearch;
-  });
+  const { users, loading } = useDatabase();
+
+  if (loading) return <div>Loading...</div>;
+
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-            User Management
-          </h1>
-          <p className="text-gray-500 mt-1">
-            Manage team members, roles, and access.
-          </p>
-        </div>
-        <Button onClick={() => setIsModalOpen(true)} className="gap-2">
-          <Plus className="w-4 h-4" />
-          Add User
-        </Button>
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-8">User Management</h1>
+      
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              <th className="p-4 text-left">Name</th>
+              <th className="p-4 text-left">Email</th>
+              <th className="p-4 text-left">Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map(user => (
+              <tr key={user[0]} className="border-t">
+                <td className="p-4">{user[1]}</td>
+                <td className="p-4">{user[2]}</td>
+                <td className="p-4">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    user[3] === 'superadmin' ? 'bg-purple-100 text-purple-800' :
+                    user[3] === 'admin' ? 'bg-blue-100 text-blue-800' :
+                    user[3] === 'hr' ? 'bg-green-100 text-green-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {user[3]}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-200 flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50/50">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-
-          </div>
-          <TeamSelector
-            selectedTeamId={selectedTeamId}
-            onTeamChange={setSelectedTeamId}
-            className="w-full md:w-auto" />
-
-        </div>
-
-        <UserTable users={filteredUsers} teams={teams} />
-      </div>
-
-      <CreateUserModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)} />
-
-    </div>);
-
+    </div>
+  );
 }
