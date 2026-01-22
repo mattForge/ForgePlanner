@@ -1,4 +1,5 @@
-const SQL = require('sql.js');
+// generate-dbs.cjs - FIXED for Node.js sql.js
+const sql = require('sql.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -30,56 +31,75 @@ CREATE TABLE time_records (
 `;
 
 const companies = [
-  { id: 'global', name: 'Global Admin', users: [
-    { id: 'global-admin', name: 'Matt Coombes', email: 'mattcoombes247@gmail.com', role: 'superadmin' }
-  ], teams: [], timeRecords: [] },
+  { 
+    id: 'global', 
+    name: 'Global Admin', 
+    users: [
+      { id: 'global-admin', name: 'Matt Coombes', email: 'mattcoombes247@gmail.com', role: 'superadmin' }
+    ], 
+    teams: [], 
+    timeRecords: [] 
+  },
   
-  { id: 'forge-academy', name: 'The Forge Academy', users: [
-    { id: 'forge-hr', name: 'Forge HR Manager', email: 'hr@forge-academy.com', role: 'hr' },
-    { id: 'forge-member1', name: 'Forge Employee 1', email: 'employee1@forge-academy.com', role: 'member' },
-    { id: 'forge-member2', name: 'Forge Employee 2', email: 'employee2@forge-academy.com', role: 'member' }
-  ], teams: [
-    { id: 'forge-team-1', name: 'Teaching Team' },
-    { id: 'forge-team-2', name: 'Admin Team' }
-  ], timeRecords: [
-    { id: 'tr1', user_id: 'forge-hr', team_id: 'forge-team-1', clock_in: '2026-01-20 09:00:00', clock_out: '2026-01-20 17:30:00', duration: 450 },
-    { id: 'tr2', user_id: 'forge-member1', team_id: 'forge-team-1', clock_in: '2026-01-20 08:30:00', clock_out: '2026-01-20 16:45:00', duration: 495 }
-  ]}
+  { 
+    id: 'forge-academy', 
+    name: 'The Forge Academy', 
+    users: [
+      { id: 'forge-hr', name: 'Forge HR Manager', email: 'hr@forge-academy.com', role: 'hr' },
+      { id: 'forge-member1', name: 'Forge Employee 1', email: 'employee1@forge-academy.com', role: 'member' },
+      { id: 'forge-member2', name: 'Forge Employee 2', email: 'employee2@forge-academy.com', role: 'member' }
+    ], 
+    teams: [
+      { id: 'forge-team-1', name: 'Teaching Team' },
+      { id: 'forge-team-2', name: 'Admin Team' }
+    ], 
+    timeRecords: [
+      { id: 'tr1', user_id: 'forge-hr', team_id: 'forge-team-1', clock_in: '2026-01-20 09:00:00', clock_out: '2026-01-20 17:30:00', duration: 450 },
+      { id: 'tr2', user_id: 'forge-member1', team_id: 'forge-team-1', clock_in: '2026-01-20 08:30:00', clock_out: '2026-01-20 16:45:00', duration: 495 }
+    ]
+  }
 ];
 
 async function createDB(companyData) {
-  const sql = new SQL.Database();
-  sql.run(schema);
+  // FIX: Initialize SQL properly for Node.js
+  const SQL = sql.default ? sql.default : sql;
+  const db = new SQL.Database();
+  
+  db.run(schema);
   
   // Insert company
-  sql.run("INSERT INTO companies (id, name, domain, is_global) VALUES (?, ?, ?, ?)", 
+  db.run("INSERT INTO companies (id, name, domain, is_global) VALUES (?, ?, ?, ?)", 
     [companyData.id, companyData.name, companyData.id + '.com', companyData.id === 'global' ? 1 : 0]);
   
   // Insert users
   companyData.users.forEach(user => {
-    sql.run("INSERT INTO users (id, name, email, role, company_id) VALUES (?, ?, ?, ?, ?)", 
+    db.run("INSERT INTO users (id, name, email, role, company_id) VALUES (?, ?, ?, ?, ?)", 
       [user.id, user.name, user.email, user.role, companyData.id]);
   });
   
   // Insert teams
   companyData.teams.forEach(team => {
-    sql.run("INSERT INTO teams (id, name, company_id) VALUES (?, ?, ?)", 
+    db.run("INSERT INTO teams (id, name, company_id) VALUES (?, ?, ?)", 
       [team.id, team.name, companyData.id]);
   });
   
   // Insert time records
   companyData.timeRecords.forEach(record => {
-    sql.run("INSERT INTO time_records (id, user_id, team_id, company_id, clock_in, clock_out, duration) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+    db.run("INSERT INTO time_records (id, user_id, team_id, company_id, clock_in, clock_out, duration) VALUES (?, ?, ?, ?, ?, ?, ?)", 
       [record.id, record.user_id, record.team_id || null, companyData.id, record.clock_in, record.clock_out || null, record.duration || 0]);
   });
   
-  const dbBytes = sql.export();
+  const dbBytes = db.export();
   const dbDir = path.join('public', 'db');
   if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
   
   fs.writeFileSync(path.join(dbDir, `${companyData.id}.db`), Buffer.from(dbBytes));
   console.log(`✅ Created ${companyData.id}.db`);
+  db.close();
 }
 
-companies.forEach(createDB);
+companies.forEach(company => {
+  createDB(company);
+});
+
 console.log('🎉 All databases created!');
