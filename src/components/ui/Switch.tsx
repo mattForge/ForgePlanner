@@ -1,46 +1,43 @@
 import React from 'react';
-import { cva, type VariantProps } from 'class-variance-authority'; // Optional, or use plain Tailwind
 
-const switchVariants = cva(
-  "inline-flex items-center h-6 w-11 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
-  {
-    variants: {
-      variant: {
-        default: "bg-input",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  }
-);
-
-interface SwitchProps extends React.HTMLAttributes<HTMLButtonElement>, VariantProps<typeof switchVariants> {
+interface SwitchProps {
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
   disabled?: boolean;
+  className?: string;
 }
 
 export function Switch({ 
-  className, 
-  checked, 
+  checked = false, 
   onCheckedChange, 
-  disabled,
+  disabled = false,
+  className = '',
   ...props 
 }: SwitchProps) {
   return (
     <button
-      className={switchVariants({ variant: "default", className })}
-      data-state={checked ? "checked" : "unchecked"}
-      onClick={() => !disabled && onCheckedChange?.(!checked)}
+      type="button"
+      role="switch"
+      aria-checked={checked}
       disabled={disabled}
+      className={`
+        relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full
+        border-2 border-transparent transition-colors duration-200 ease-in-out
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
+        disabled:cursor-not-allowed disabled:opacity-50
+        ${checked ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'}
+        ${className}
+      `}
+      onClick={() => !disabled && onCheckedChange?.(!checked)}
       {...props}
     >
-      <span className="sr-only">Toggle</span>
       <span
-        className={`block h-5 w-5 rounded-full transition-transform bg-background shadow-lg ring-0 ${
-          checked ? 'translate-x-6' : 'translate-x-1'
-        }`}
+        className={`
+          pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white
+          shadow-lg ring-0 transition duration-200 ease-in-out
+          ${checked ? 'translate-x-5' : 'translate-x-0'}
+        `}
+        aria-hidden="true"
       />
     </button>
   );
